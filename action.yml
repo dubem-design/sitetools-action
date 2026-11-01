@@ -1,0 +1,93 @@
+name: Sitetools checks
+description: Run your Sitetools checks on a build, live URLs or a sitemap, wait for the report, and fail the job on regressions.
+author: Sitetools
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  api-key:
+    description: Sitetools API key for the space (Settings → Developers). Store it as a secret.
+    required: true
+  site-id:
+    description: The site id, from the dashboard URL (/sites/<id>).
+    required: true
+  app-url:
+    description: Sitetools base URL. Change only for self-hosted or staging instances.
+    required: false
+    default: https://app.sitetools.pro
+  build-dir:
+    description: Directory with the generated site (zipped and sent as the Build source). Use this, urls or sitemap.
+    required: false
+  urls:
+    description: Live URLs or paths to check, one per line (Live source).
+    required: false
+  sitemap:
+    description: A sitemap URL on the site's domain, or "auto" for /sitemap.xml (Live source).
+    required: false
+  label:
+    description: Run label shown in the dashboard. Defaults to the commit SHA.
+    required: false
+    default: ${{ github.sha }}
+  pack:
+    description: Which checks to run: "all", "ungrouped", or a pack (suite) id. Defaults to the site's active pack.
+    required: false
+  fail-on:
+    description: What fails the job: "error" (default), "warning" (errors or warnings), or "none" (report only).
+    required: false
+    default: error
+  timeout-seconds:
+    description: How long to wait for the run to finish before failing.
+    required: false
+    default: "600"
+  comment:
+    description: Post (and update) a sticky pull request comment with the results. Needs github-token.
+    required: false
+    default: "true"
+  github-token:
+    description: Token used to post the pull request comment.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  run-id:
+    description: The Sitetools run id.
+    value: ${{ steps.run.outputs.run-id }}
+  status:
+    description: Final run status (completed or failed).
+    value: ${{ steps.run.outputs.status }}
+  score:
+    description: Score out of 100.
+    value: ${{ steps.run.outputs.score }}
+  passed:
+    description: Checks that passed.
+    value: ${{ steps.run.outputs.passed }}
+  failed:
+    description: Checks that failed.
+    value: ${{ steps.run.outputs.failed }}
+  warnings:
+    description: Checks with warnings.
+    value: ${{ steps.run.outputs.warnings }}
+  report-url:
+    description: Link to the report in the dashboard.
+    value: ${{ steps.run.outputs.report-url }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      env:
+        INPUT_API_KEY: ${{ inputs.api-key }}
+        INPUT_SITE_ID: ${{ inputs.site-id }}
+        INPUT_APP_URL: ${{ inputs.app-url }}
+        INPUT_BUILD_DIR: ${{ inputs.build-dir }}
+        INPUT_URLS: ${{ inputs.urls }}
+        INPUT_SITEMAP: ${{ inputs.sitemap }}
+        INPUT_LABEL: ${{ inputs.label }}
+        INPUT_PACK: ${{ inputs.pack }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "${{ github.action_path }}/run.sh"
